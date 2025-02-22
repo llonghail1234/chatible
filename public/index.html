@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Ẩn Danh</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #user-info, #chat-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        #user-info h2, #chat-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #555;
+            text-align: left;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #chat-window {
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        #chat-window::-webkit-scrollbar {
+            display: none;
+        }
+
+        #message-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            position: relative;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+            height: 48px;
+        }
+
+        #send-button {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            border-radius: 50%;
+            background: #007bff;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #send-button:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        #send-button svg {
+            width: 20px;
+            height: 20px;
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content button {
+            width: 100px;
+            margin: 10px;
+        }
+
+        #confirm-end {
+            background-color: #dc3545;
+        }
+
+        #confirm-end:hover {
+            background-color: #c82333;
+        }
+
+        #cancel-end {
+            background-color: #6c757d;
+        }
+
+        #cancel-end:hover {
+            background-color: #5a6268;
+        }
+
+        .message {
+            display: block;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px 15px 0 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message.partner {
+            align-self: flex-start;
+            background-color: #e9ecef;
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 0;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: rgba(0,0,0,0.5);
+            margin-top: 4px;
+            display: block;
+            text-align: right;
+        }
+
+        .message.partner .message-time {
+            text-align: left;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            margin-right: 5px;
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #e2e8f0;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #94a3b8;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .modern-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 2rem;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modern-button:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .modern-button:active {
+            transform: translateY(0);
+        }
+
+        .dark-mode {
+            --background: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text: #ffffff;
+            --border: #404040;
+            --primary: #818cf8;
+            --secondary: #6366f1;
+        }
+
+        #theme-toggle {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .dark-mode #theme-toggle svg {
+            stroke: #fff;
+        }
+
+        /* Hiệu ứng transition cho toàn bộ giao diện */
+        body, .message, #message-input {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="user-info">
+        <h2>Thông tin người dùng</h2>
+        <label for="user-name">Tên của bạn:</label>
+        <input type="text" id="user-name" placeholder="Nhập tên của bạn">
+        <label for="user-gender">Giới tính của bạn:</label>
+        <select id="user-gender">
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+        </select>
+        <label for="search-gender">Tìm kiếm đối tác:</label>
+        <select id="search-gender">
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+            <option value="any">Bất kỳ</option>
+        </select>
+        <button id="save-info">Lưu thông tin</button>
+    </div>
+
+    <div id="chat-container" style="display: none;">
+        <div class="chat-header">
+            <div class="status-dot"></div>
+            <h2>Chat Ẩn Danh</h2>
+            <button id="theme-toggle" class="modern-button">
+                <svg id="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <!-- Biểu tượng mặt trăng (dark mode) -->
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" class="moon-icon" style="display: none;"/>
+                    <!-- Biểu tượng mặt trời (light mode) -->
+                    <path d="M12 3V5M18.36 5.64L16.95 7.05M21 12H19M5 12H3M7.05 16.95L5.64 18.36M12 19V21M16.95 7.05L18.36 5.64M5.64 5.64L7.05 7.05" class="sun-icon"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div id="chat-window">
+            <div class="typing-indicator" style="display: none;">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+        
+        <div id="message-input-container" style="display: none;">
+            <input type="text" id="message-input" placeholder="Nhập tin nhắn...">
+            <button id="send-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+            </button>
+        </div>
+        <button id="start-chat">Bắt đầu Chat</button>
+        <button id="end-chat">Kết thúc Chat</button>
+    </div>
+
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <p>Bạn có chắc chắn muốn kết thúc cuộc trò chuyện?</p>
+            <button id="confirm-end">Có</button>
+            <button id="cancel-end">Không</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentRoom = null;
+        let userName = '';
+
+        // Lấy các phần tử modal
+        const modal = document.getElementById('confirmation-modal');
+        const confirmEndBtn = document.getElementById('confirm-end');
+        const cancelEndBtn = document.getElementById('cancel-end');
+
+        // Bắt đầu chat
+        document.getElementById('start-chat').addEventListener('click', () => {
+            const userGender = document.getElementById('user-gender').value;
+            const searchGender = document.getElementById('search-gender').value;
+            socket.emit('start chat', {
+                gender: userGender,
+                searchGender: searchGender
+            });
+        });
+
+        // Kết thúc chat
+        document.getElementById('end-chat').addEventListener('click', () => {
+            if (currentRoom) {
+                modal.style.display = 'block';
+            }
+        });
+
+        // Xác nhận kết thúc chat
+        confirmEndBtn.addEventListener('click', () => {
+            socket.emit('end chat', currentRoom);
+            currentRoom = null;
+            document.getElementById('chat-window').innerHTML = 'Cuộc trò chuyện đã kết thúc.';
+            modal.style.display = 'none';
+        });
+
+        // Hủy bỏ kết thúc chat
+        cancelEndBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // Khi đối tác rời khỏi
+        socket.on('partner left', () => {
+            const chatWindow = document.getElementById('chat-window');
+            const leaveMessage = document.createElement('div');
+            leaveMessage.textContent = 'Đối tác đã rời khỏi cuộc trò chuyện.';
+            leaveMessage.style.color = '#dc3545';
+            leaveMessage.style.textAlign = 'center';
+            chatWindow.appendChild(leaveMessage);
+
+            currentRoom = null;
+
+            document.getElementById('start-chat').style.display = 'block';
+            document.getElementById('message-input-container').style.display = 'none';
+        });
+
+        // Khi chat kết thúc
+        socket.on('chat ended', () => {
+            const chatWindow = document.getElementById('chat-window');
+            const endMessage = document.createElement('div');
+            endMessage.textContent = 'Cuộc trò chuyện đã kết thúc.';
+            endMessage.style.color = '#dc3545';
+            endMessage.style.textAlign = 'center';
+            chatWindow.appendChild(endMessage);
+
+            currentRoom = null;
+
+            document.getElementById('start-chat').style.display = 'block';
+            document.getElementById('message-input-container').style.display = 'none';
+        });
+
+        // Khi đang chờ ghép cặp
+        socket.on('waiting for partner', () => {
+            document.getElementById('chat-window').innerHTML = 'Đang tìm người chat...';
+        });
+
+        // Khi chat bắt đầu
+        socket.on('chat started', (data) => {
+            currentRoom = data.roomId;
+            console.log('Bắt đầu trò chuyện trong phòng:', currentRoom);
+            document.getElementById('chat-window').innerHTML = 'Bắt đầu trò chuyện!';
+            
+            // Hiện ô nhập tin nhắn và nút gửi
+            document.getElementById('message-input-container').style.display = 'flex';
+            document.getElementById('start-chat').style.display = 'none';
+        });
+
+        // Gửi tin nhắn khi nhấn Enter
+        document.getElementById('message-input').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { // Kiểm tra nếu phím nhấn là Enter
+                event.preventDefault(); // Ngăn chặn hành vi mặc định của Enter (ví dụ: xuống dòng)
+                const message = document.getElementById('message-input').value;
+                if (currentRoom && message.trim() !== '') {
+                    socket.emit('room message', { roomId: currentRoom, message });
+                    document.getElementById('message-input').value = ''; // Xóa nội dung ô nhập
+                }
+            }
+        });
+
+        // Gửi tin nhắn khi nhấn nút Gửi
+        document.getElementById('send-button').addEventListener('click', () => {
+            const message = document.getElementById('message-input').value;
+            if (currentRoom && message.trim() !== '') {
+                socket.emit('room message', { roomId: currentRoom, message });
+                document.getElementById('message-input').value = ''; // Xóa nội dung ô nhập
+            }
+        });
+
+        // Nhận tin nhắn
+        socket.on('room message', (data) => {
+            const chatWindow = document.getElementById('chat-window');
+            const messageElement = document.createElement('div');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `
+                ${data.message}
+                <span class="message-time">${time}</span>
+            `;
+
+            if (data.sender === userName) {
+                messageElement.classList.add('user');
+            } else {
+                messageElement.classList.add('partner');
+            }
+
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+
+        // Lưu thông tin người dùng
+        document.getElementById('save-info').addEventListener('click', () => {
+            userName = document.getElementById('user-name').value;
+            const userGender = document.getElementById('user-gender').value;
+            if (userName && userGender) {
+                socket.emit('save user info', {
+                    name: userName,
+                    gender: userGender
+                });
+            } else {
+                alert('Vui lòng nhập đầy đủ tên và giới tính!');
+            }
+        });
+
+        // Xác nhận thông tin đã lưu
+        socket.on('info saved', (message) => {
+            alert(message);
+            document.getElementById('user-info').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'block';
+        });
+
+        // Khi người dùng tắt tab hoặc đóng trình duyệt
+        window.addEventListener('beforeunload', (event) => {
+            if (currentRoom) {
+                // Gửi sự kiện kết thúc chat đến server
+                socket.emit('end chat', currentRoom);
+            }
+        });
+
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const moonIcon = themeIcon.querySelector('.moon-icon');
+        const sunIcon = themeIcon.querySelector('.sun-icon');
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            
+            // Đổi icon
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            moonIcon.style.display = isDarkMode ? 'block' : 'none';
+            sunIcon.style.display = isDarkMode ? 'none' : 'block';
+            
+            // Lưu trạng thái theme
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+        });
+
+        // Khôi phục theme khi tải trang
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            moonIcon.style.display = 'block';
+            sunIcon.style.display = 'none';
+        }
+    </script>
+</body>
+</html> 
